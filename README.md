@@ -1,6 +1,35 @@
-<h1 align='center'>ETL-Template</h1>
+<h1 align='center'>ETL-Waze</h1>
 
-<p align='center'>Template Repository for creating new ETLs</p>
+<p align='center'>Waze for Cities partner feed (alerts, jams &amp; unusual traffic) for CloudTAK</p>
+
+## Overview
+
+Polls a [Waze for Cities](https://www.waze.com/wazeforcities) partner feed and posts one of its collections to the map.
+Each Layer ingests a single collection selected by `WAZE_TYPE`, and the Layer's output schema reflects that collection -
+create one Layer per collection to ingest all three:
+
+| Feed Collection  | Geometry   | CoT Type | Notes                                                                    |
+| ---------------- | ---------- | -------- | ------------------------------------------------------------------------ |
+| `alerts`         | Point      | `a-f-G`  | User reports - accidents, hazards, road closures, jams, weather, police  |
+| `jams`           | LineString | `u-d-f`  | Traffic jams, colored by level (0 free flow to 5 blocked)                |
+| `irregularities` | LineString | `u-d-f`  | Unusual traffic, dashed and colored by jam level                         |
+
+The feed URL is built from the Partner ID and Feed Token that Waze provides in the Partner Hub:
+
+```
+https://www.waze.com/partnerhub-api/partners/<WAZE_PARTNER_ID>/waze-feeds/<WAZE_TOKEN>?format=1
+```
+
+## Environment
+
+| Variable              | Required | Default                                | Description                                                     |
+| --------------------- | -------- | -------------------------------------- | --------------------------------------------------------------- |
+| `WAZE_PARTNER_ID`     | Yes      |                                        | Numeric Partner ID from the feed URL                            |
+| `WAZE_TOKEN`          | Yes      |                                        | Feed Token (UUID) from the feed URL                             |
+| `WAZE_API_URL`        | No       | `https://www.waze.com/partnerhub-api`  | Partner Hub API base URL                                        |
+| `WAZE_TYPE`           | No       | `alerts`                               | Collection to ingest - `alerts`, `jams` or `irregularities`     |
+| `Minimum Reliability` | No       | `0`                                    | Alerts only - drop Alerts with a reliability below this (0-10)  |
+| `DEBUG`               | No       | `false`                                | Print results in logs                                           |
 
 ## Development
 

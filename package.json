@@ -1,9 +1,9 @@
 {
-    "name": "coe-etl-template",
+    "name": "etl-waze",
     "type": "module",
-    "prviate": true,
+    "private": true,
     "version": "1.0.0",
-    "description": "",
+    "description": "Waze for Cities partner feed (alerts, jams & irregularities) for CloudTAK",
     "main": "task.ts",
     "scripts": {
         "lint": "eslint *.ts",

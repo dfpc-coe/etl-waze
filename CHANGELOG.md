@@ -12,11 +12,9 @@
 
 ### Pending Release
 
-- :rocket: Build & push via `cloudtak-etl` so `capabilities.json` is annotated onto the OCI manifest
-- :tada: Add starter `capabilities.json`
-- :arrow_up: Update Github Actions to current versions & run build/test in CI
-
 ### v1.0.0
 
-- :rocket: Initial Approach
+- :tada: Ingest Waze for Cities partner feed - Alerts as Points, Jams & Irregularities as Lines
+- :tada: Require `WAZE_PARTNER_ID` & `WAZE_TOKEN` environment, `WAZE_TYPE` selects the collection & output schema per Layer, minimum alert reliability
+- :tada: Add `capabilities.json`
 
