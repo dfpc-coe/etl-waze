@@ -187,7 +187,7 @@ function humanize(value: string): string {
 }
 
 function where(item: { street?: string; city?: string }): string | undefined {
-    return [item.street, item.city].filter((v) => v).join(', ') || undefined;
+    return [item.street, item.city].filter(Boolean).join(', ') || undefined;
 }
 
 export default class Task extends ETL {
@@ -199,21 +199,16 @@ export default class Task extends ETL {
         type: SchemaType = SchemaType.Input,
         flow: DataFlowType = DataFlowType.Incoming
     ): Promise<TSchema> {
-        if (flow === DataFlowType.Incoming) {
-            if (type === SchemaType.Input) {
-                return InputSchema;
-            } else {
-                return OutputSchemas[await this.wazeType()];
-            }
-        } else {
-            return Type.Object({});
-        }
+        if (flow !== DataFlowType.Incoming) return Type.Object({});
+        if (type === SchemaType.Input) return InputSchema;
+
+        return OutputSchemas[await this.wazeType()];
     }
 
     async wazeType(): Promise<string> {
         try {
             const env = await this.env(Type.Partial(InputSchema));
-            if (env.WAZE_TYPE && OutputSchemas[env.WAZE_TYPE]) return env.WAZE_TYPE;
+            if (env.WAZE_TYPE && Object.hasOwn(OutputSchemas, env.WAZE_TYPE)) return env.WAZE_TYPE;
         } catch (err) {
             console.log(`ok - could not read layer environment, defaulting to alerts: ${err instanceof Error ? err.message : String(err)}`);
         }
@@ -240,17 +235,17 @@ export default class Task extends ETL {
         const features: Static<typeof Feature.InputFeature>[] = [];
 
         if (env.WAZE_TYPE === 'jams') {
-            for (const jam of feed.jams || []) {
+            for (const jam of feed.jams ?? []) {
                 if (jam.line.length < 2) continue;
                 features.push(this.jamFeature(jam));
             }
         } else if (env.WAZE_TYPE === 'irregularities') {
-            for (const irregularity of feed.irregularities || []) {
+            for (const irregularity of feed.irregularities ?? []) {
                 if (irregularity.line.length < 2) continue;
                 features.push(this.irregularityFeature(irregularity));
             }
         } else {
-            for (const alert of feed.alerts || []) {
+            for (const alert of feed.alerts ?? []) {
                 if ((alert.reliability ?? 0) < env['Minimum Reliability']) continue;
                 features.push(this.alertFeature(alert));
             }
@@ -277,7 +272,7 @@ export default class Task extends ETL {
             location,
             alert.reliability !== undefined ? `Reliability: ${alert.reliability}/10` : undefined,
             `Reported: ${published}`
-        ].filter((v) => v).join('\n');
+        ].filter(Boolean).join('\n');
 
         return {
             id: `waze-alert-${alert.uuid}`,
@@ -318,7 +313,7 @@ export default class Task extends ETL {
         const published = new Date(jam.pubMillis).toISOString();
         const level = jam.level ?? 0;
         const location = where(jam);
-        const route = [jam.startNode, jam.endNode].filter((v) => v).join(' to ') || undefined;
+        const route = [jam.startNode, jam.endNode].filter(Boolean).join(' to ') || undefined;
 
         const remarks = [
             `Traffic Jam - Level ${level}/5`,
@@ -328,7 +323,7 @@ export default class Task extends ETL {
             jam.length !== undefined ? `Length: ${jam.length} m` : undefined,
             jam.delay !== undefined ? (jam.delay < 0 ? 'Delay: Blocked' : `Delay: ${Math.round(jam.delay / 60)} min`) : undefined,
             `Detected: ${published}`
-        ].filter((v) => v).join('\n');
+        ].filter(Boolean).join('\n');
 
         return {
             id: `waze-jam-${jam.uuid}`,
@@ -372,7 +367,7 @@ export default class Task extends ETL {
             : undefined;
         const level = irregularity.jamLevel ?? 0;
         const location = where(irregularity);
-        const route = [irregularity.startNode, irregularity.endNode].filter((v) => v).join(' to ') || undefined;
+        const route = [irregularity.startNode, irregularity.endNode].filter(Boolean).join(' to ') || undefined;
 
         const trend = irregularity.trend === undefined ? undefined
             : irregularity.trend > 0 ? 'Improving'
@@ -390,7 +385,7 @@ export default class Task extends ETL {
             trend ? `Trend: ${trend}` : undefined,
             `Detected: ${published}`,
             updated ? `Updated: ${updated}` : undefined
-        ].filter((v) => v).join('\n');
+        ].filter(Boolean).join('\n');
 
         return {
             id: `waze-irregularity-${irregularity.id}`,
@@ -436,6 +431,6 @@ export default class Task extends ETL {
 }
 
 await local(await Task.init(import.meta.url), import.meta.url);
-export async function handler(event: Event = {}) {
-    return await internal(await Task.init(import.meta.url), event);
+export async function handler(event: Event = {}): ReturnType<typeof internal> {
+    return internal(await Task.init(import.meta.url), event);
 }
